@@ -16,31 +16,17 @@ struct TabCardView: View {
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                // In pinched view, use images without background color
-                if isPinchedView {
-                    if let imageName = tab.backgroundImage {
-                        Image(imageName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
-                            .clipped()
-                    } else {
-                        tab.backgroundColor
-                            .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
-                    }
+                // Use same rendering logic for both views - images with background fallback
+                if let imageName = tab.backgroundImage {
+                    Image(imageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
+                        .clipped()
+                        .background(tab.backgroundColor) // Fallback color behind image
                 } else {
-                    // Try to load background image, fallback to color
-                    if let imageName = tab.backgroundImage {
-                        Image(imageName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
-                            .clipped()
-                            .background(tab.backgroundColor) // Fallback color behind image
-                    } else {
-                        tab.backgroundColor
-                            .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
-                    }
+                    tab.backgroundColor
+                        .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
                 }
             }
             .cornerRadius(8)

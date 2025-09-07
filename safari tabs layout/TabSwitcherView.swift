@@ -48,7 +48,7 @@ struct TabSwitcherView: View {
                 
                 // Tabs scroll view with stacking effect
                 ScrollView {
-                    LazyVStack(spacing: isPinchedView ? -185 : -100) { // Restore original -185px spacing
+                    LazyVStack(spacing: isPinchedView ? -185 : -100) { // Restore original pinched view spacing
                         ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
                             TabCardView(
                                 tab: tab,
@@ -65,7 +65,7 @@ struct TabSwitcherView: View {
                                 isPinchedView: isPinchedView
                             )
                             .shadow(
-                                color: (index > 0 && !isPinchedView) ? .black.opacity(0.24) : .clear,
+                                color: (index > 0 && !isPinchedView) ? .black.opacity(0.24) : .clear, // Disable shadows in pinched view
                                 radius: (index > 0 && !isPinchedView) ? 104 : 0,
                                 x: (index > 0 && !isPinchedView) ? 0 : 0,
                                 y: (index > 0 && !isPinchedView) ? -28 : 0
@@ -80,7 +80,7 @@ struct TabSwitcherView: View {
                                 perspective: 0.5
                             )
                             .zIndex(Double(index))
-                            .opacity(1.0) // Force 100% opacity
+                            .opacity(isPinchedView ? 1.0 : 1.0) // Force 100% opacity in pinched view
                             .padding(.horizontal, getHorizontalPadding(for: index))
                             .background(
                                 GeometryReader { geometry in
@@ -97,7 +97,7 @@ struct TabSwitcherView: View {
                 .onPreferenceChange(CardPositionPreferenceKey.self) { cardData in
                     updateCardPosition(cardData)
                 }
-                .disabled(isPinchedView) // Disable scrolling when in pinched view
+                .disabled(false) // Keep scrolling enabled to test if scroll disabling is the issue
                 
                 Spacer()
                 
