@@ -16,10 +16,18 @@ struct TabCardView: View {
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                // In pinched view, use solid color for better opacity
+                // In pinched view, use images without background color
                 if isPinchedView {
-                    tab.backgroundColor
-                        .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
+                    if let imageName = tab.backgroundImage {
+                        Image(imageName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
+                            .clipped()
+                    } else {
+                        tab.backgroundColor
+                            .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
+                    }
                 } else {
                     // Try to load background image, fallback to color
                     if let imageName = tab.backgroundImage {
