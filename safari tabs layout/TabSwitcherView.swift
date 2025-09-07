@@ -48,7 +48,7 @@ struct TabSwitcherView: View {
                 
                 // Tabs scroll view with stacking effect
                 ScrollView {
-                    LazyVStack(spacing: isPinchedView ? -185 : -100) { // Restore original pinched view spacing
+                    LazyVStack(spacing: isPinchedView ? -145 : -100) { // Pinched view spacing adjusted to -145px
                         ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
                             TabCardView(
                                 tab: tab,
