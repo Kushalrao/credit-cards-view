@@ -1,0 +1,35 @@
+//
+//  TabCardView.swift
+//  safari tabs layout
+//
+//  Created by Assistant
+//
+
+import SwiftUI
+
+struct TabCardView: View {
+    let tab: Tab
+    let onClose: () -> Void
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            ZStack {
+                // Try to load background image, fallback to color
+                if let imageName = tab.backgroundImage {
+                    Image(imageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
+                        .clipped()
+                        .background(tab.backgroundColor) // Fallback color behind image
+                } else {
+                    tab.backgroundColor
+                        .frame(width: UIScreen.main.bounds.width * 0.8, height: 200)
+                }
+            }
+            .cornerRadius(8)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
