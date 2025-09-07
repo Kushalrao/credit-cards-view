@@ -14,6 +14,17 @@ struct Tab: Identifiable, Equatable {
     var favicon: String
     var isPrivate: Bool = false
     var backgroundImageName: String?
+    var rupeeAmount: Int
+    
+    init(title: String, url: String, favicon: String, isPrivate: Bool = false, backgroundImageName: String? = nil) {
+        self.title = title
+        self.url = url
+        self.favicon = favicon
+        self.isPrivate = isPrivate
+        self.backgroundImageName = backgroundImageName
+        // Generate random amount between Rs.10,000 to Rs.99,999
+        self.rupeeAmount = Int.random(in: 10000...99999)
+    }
     
     var backgroundColor: Color {
         switch url {

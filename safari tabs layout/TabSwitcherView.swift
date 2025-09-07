@@ -45,6 +45,23 @@ struct TabSwitcherView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
+                // Total bill display (only visible in pinched view)
+                if isPinchedView {
+                    VStack(alignment: .center, spacing: 8) {
+                        Text("YOUR TOTAL BILL")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                            .tracking(0.75) // 5% letter spacing (15 * 0.05 = 0.75)
+                        
+                        AnimatedNumberView(
+                            number: tabs.reduce(0) { $0 + $1.rupeeAmount },
+                            fontSize: 43
+                        )
+                    }
+                    .padding(.top, 60)
+                    .padding(.bottom, 40)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
                 
                 // Tabs scroll view with stacking effect
                 ScrollView {
@@ -100,55 +117,6 @@ struct TabSwitcherView: View {
                 .disabled(false) // Keep scrolling enabled to test if scroll disabling is the issue
                 
                 Spacer()
-                
-                // Bottom toolbar
-                HStack {
-                    // Private button
-                    Button("Private") {
-                        // Handle private browsing toggle
-                    }
-                    .foregroundColor(.white)
-                    
-                    Spacer()
-                    
-                    // New tab button
-                    Button(action: {
-                        let urls = [
-                            "https://google.com",
-                            "https://github.com", 
-                            "https://stackoverflow.com",
-                            "https://developer.apple.com",
-                            "https://swift.org",
-                            "https://xcode.com"
-                        ]
-                        let randomURL = urls.randomElement() ?? "https://apple.com"
-                        let newTab = Tab(
-                            title: "New Tab",
-                            url: randomURL,
-                            favicon: "🌐"
-                        )
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            tabs.append(newTab)
-                        }
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                    }
-                    
-                    Spacer()
-                    
-                    // Done button
-                    Button("Done") {
-                        withAnimation(.easeInOut(duration: 0.4)) {
-                            isShowingTabSwitcher = false
-                        }
-                    }
-                    .foregroundColor(.white)
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 34) // Account for home indicator
-                .background(Color.black)
             }
         }
         .highPriorityGesture(
