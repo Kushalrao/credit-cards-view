@@ -35,6 +35,8 @@ struct TabSwitcherView: View {
     @State private var scrollOffset: CGFloat = 0
     @State private var cardPositions: [CGFloat] = []
     @State private var tappedCardId: UUID? = nil
+    @State private var isPinchedView: Bool = false
+    @GestureState private var pinchScale: CGFloat = 1.0
     
     var body: some View {
         ZStack {
@@ -46,7 +48,7 @@ struct TabSwitcherView: View {
                 
                 // Tabs scroll view with stacking effect
                 ScrollView {
-                    LazyVStack(spacing: -100) { // Maximum negative spacing for dramatic stacking
+                    LazyVStack(spacing: isPinchedView ? -185 : -100) { // Restore original -185px spacing
                         ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
                             TabCardView(
                                 tab: tab,
@@ -56,14 +58,17 @@ struct TabSwitcherView: View {
                                     }
                                 },
                                 onTap: {
-                                    toggleCardRotation(for: tab)
-                                }
+                                    if !isPinchedView {
+                                        toggleCardRotation(for: tab)
+                                    }
+                                },
+                                isPinchedView: isPinchedView
                             )
                             .shadow(
-                                color: index > 0 ? .black.opacity(0.24) : .clear,
-                                radius: index > 0 ? 104 : 0,
-                                x: index > 0 ? 0 : 0,
-                                y: index > 0 ? -28 : 0
+                                color: (index > 0 && !isPinchedView) ? .black.opacity(0.24) : .clear,
+                                radius: (index > 0 && !isPinchedView) ? 104 : 0,
+                                x: (index > 0 && !isPinchedView) ? 0 : 0,
+                                y: (index > 0 && !isPinchedView) ? -28 : 0
                             )
                             .scaleEffect(getScaleEffect(for: index))
                             .offset(y: getOffsetY(for: index))
@@ -75,6 +80,7 @@ struct TabSwitcherView: View {
                                 perspective: 0.5
                             )
                             .zIndex(Double(index))
+                            .opacity(1.0) // Force 100% opacity
                             .padding(.horizontal, getHorizontalPadding(for: index))
                             .background(
                                 GeometryReader { geometry in
@@ -91,6 +97,7 @@ struct TabSwitcherView: View {
                 .onPreferenceChange(CardPositionPreferenceKey.self) { cardData in
                     updateCardPosition(cardData)
                 }
+                .disabled(isPinchedView) // Disable scrolling when in pinched view
                 
                 Spacer()
                 
@@ -144,6 +151,48 @@ struct TabSwitcherView: View {
                 .background(Color.black)
             }
         }
+        .highPriorityGesture(
+            MagnificationGesture()
+                .updating($pinchScale) { value, state, _ in
+                    state = value
+                }
+                .onEnded { value in
+                    print("Pinch gesture detected with value: \(value)")
+                    // Pinch in (zoom out) - value < 1.0
+                    if value < 0.8 && !isPinchedView {
+                        print("Pinch in detected - switching to pinched view")
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isPinchedView = true
+                            tappedCardId = nil // Disable card interactions
+                        }
+                        // Add haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                    }
+                    // Pinch out (zoom in) - value > 1.2
+                    else if value > 1.2 && isPinchedView {
+                        print("Pinch out detected - switching to normal view")
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isPinchedView = false
+                        }
+                    }
+                }
+        )
+        .simultaneousGesture(
+            TapGesture(count: 2)
+                .onEnded {
+                    print("Double tap detected - toggling pinched view")
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isPinchedView.toggle()
+                        if isPinchedView {
+                            tappedCardId = nil // Disable card interactions
+                            // Add haptic feedback
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                        }
+                    }
+                }
+        )
     }
     
     // Helper functions for stacking effect
@@ -205,6 +254,9 @@ struct TabSwitcherView: View {
     }
     
     private func getCardRotationAngle(for tab: Tab) -> Double {
+        if isPinchedView {
+            return 0.0 // All cards at 0° in pinched view
+        }
         if tappedCardId == tab.id {
             return 0.0 // Tapped card rotates to 0°
         }
