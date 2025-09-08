@@ -291,7 +291,7 @@ struct TabSwitcherView: View {
     
     private func getDynamicRotationAngle(for index: Int) -> Double {
         // Fixed rotation for all cards
-        return -40.0
+        return -60.0
     }
     
     // Card rotation toggle functions
@@ -340,9 +340,9 @@ struct TabSwitcherView: View {
             let maxDistance = deviceHeight * 0.6 // Maximum distance for full rotation
             let normalizedDistance = max(0, min(1, distanceFromTop / maxDistance))
             
-            // Interpolate between -5° (top) and -40° (bottom)
-            let topRotation = -5.0
-            let bottomRotation = -40.0
+            // Interpolate between -10° (top) and -60° (bottom)
+            let topRotation = -10.0
+            let bottomRotation = -60.0
             let dynamicRotation = topRotation + normalizedDistance * (bottomRotation - topRotation)
             
             print("Card \(tabIndex): basePos=\(baseCardPosition), scrollOffset=\(scrollViewContentOffset), currentPos=\(currentCardPosition), distanceFromTop=\(distanceFromTop), normalized=\(normalizedDistance), rotation=\(dynamicRotation)")
@@ -350,6 +350,6 @@ struct TabSwitcherView: View {
             return dynamicRotation
         }
         
-        return -40.0 // Default fallback
+        return -60.0 // Default fallback
     }
 }
