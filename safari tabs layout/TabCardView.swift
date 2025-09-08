@@ -74,7 +74,7 @@ struct TabCardView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
-            .cornerRadius(8)
+            .cornerRadius(13)
             .allowsHitTesting(true)
             .disabled(false)
         }

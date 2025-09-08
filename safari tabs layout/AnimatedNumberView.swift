@@ -15,7 +15,7 @@ struct AnimatedNumberView: View {
     var body: some View {
         Text("Rs.\(displayNumber)")
             .font(.system(size: fontSize, weight: .bold))
-            .foregroundColor(.white)
+            .foregroundColor(.black)
             .onAppear {
                 animateToNumber()
             }

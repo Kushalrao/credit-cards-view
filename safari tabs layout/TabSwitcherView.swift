@@ -41,10 +41,10 @@ struct TabSwitcherView: View {
     @State private var cardsInFinalPosition: Set<Int> = []
     
     var body: some View {
-        ZStack {
-            // Background
-            Color.black
-                .ignoresSafeArea()
+                ZStack {
+                    // Background
+                    Color.white
+                        .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Total bill display (only visible in pinched view)
@@ -52,7 +52,7 @@ struct TabSwitcherView: View {
                     VStack(alignment: .center, spacing: 8) {
                         Text("YOUR TOTAL BILL")
                             .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.black)
                             .tracking(0.75) // 5% letter spacing (15 * 0.05 = 0.75)
                         
                         AnimatedNumberView(
