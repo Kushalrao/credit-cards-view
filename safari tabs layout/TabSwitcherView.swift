@@ -35,14 +35,6 @@ extension Color {
     }
 }
 
-struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
 struct CardPositionData: Equatable {
     let index: Int
     let position: CGFloat
@@ -56,12 +48,21 @@ struct CardPositionPreferenceKey: PreferenceKey {
     }
 }
 
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct TabSwitcherView: View {
     @Binding var tabs: [Tab]
     @Binding var isShowingTabSwitcher: Bool
     let onSelectTab: (Tab) -> Void
     @State private var scrollOffset: CGFloat = 0
     @State private var cardPositions: [CGFloat] = []
+    @State private var scrollViewContentOffset: CGFloat = 0
     @State private var tappedCardId: UUID? = nil
     @State private var isPinchedView: Bool = false
     @GestureState private var pinchScale: CGFloat = 1.0
@@ -94,8 +95,9 @@ struct TabSwitcherView: View {
                 }
                 
                 // Tabs scroll view with stacking effect
-                ScrollView {
-                    LazyVStack(spacing: isPinchedView ? -145 : -100) { // Pinched view spacing adjusted to -145px
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: isPinchedView ? -145 : -100) { // Pinched view spacing adjusted to -145px
                         ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
                             TabCardView(
                                 tab: tab,
@@ -136,6 +138,8 @@ struct TabSwitcherView: View {
                                 value: isPinchedView
                             )
                             .animation(.easeInOut(duration: 0.3), value: cardsInFinalPosition)
+                            .animation(.easeInOut(duration: 0.2), value: cardPositions)
+                            .animation(.easeInOut(duration: 0.2), value: scrollViewContentOffset)
                             .background(
                                 GeometryReader { geometry in
                                     Color.clear
@@ -146,6 +150,18 @@ struct TabSwitcherView: View {
                     }
                     .padding(.top, 20)
                     .padding(.horizontal, 16)
+                    .background(
+                        GeometryReader { geometry in
+                            Color.clear
+                                .onAppear {
+                                    scrollViewContentOffset = geometry.frame(in: .named("scroll")).minY
+                                }
+                                .onChange(of: geometry.frame(in: .named("scroll")).minY) { newValue in
+                                    scrollViewContentOffset = newValue
+                                }
+                        }
+                    )
+                }
                 }
                 .coordinateSpace(name: "scroll")
                 .onPreferenceChange(CardPositionPreferenceKey.self) { cardData in
@@ -252,6 +268,9 @@ struct TabSwitcherView: View {
             cardPositions.append(0)
         }
         cardPositions[cardData.index] = cardData.position
+        
+        // Debug logging
+        print("Updated card \(cardData.index) position to: \(cardData.position)")
     }
     
     private func startTwoPhaseAnimation() {
@@ -299,6 +318,38 @@ struct TabSwitcherView: View {
         if tappedCardId == tab.id {
             return 0.0 // Tapped card rotates to 0°
         }
-        return -40.0 // All other cards stay at -40°
+        
+        // Dynamic rotation based on card index and scroll position
+        if let tabIndex = tabs.firstIndex(where: { $0.id == tab.id }) {
+            let deviceHeight = UIScreen.main.bounds.height
+            let cardHeight: CGFloat = 200 // Approximate card height
+            let cardSpacing: CGFloat = -100 // Current spacing
+            
+            // Calculate the card's base position in the stack
+            let baseCardPosition = CGFloat(tabIndex) * (cardHeight + cardSpacing)
+            
+            // Calculate the card's current position considering scroll offset
+            let currentCardPosition = baseCardPosition + scrollViewContentOffset
+            
+            // Calculate rotation based on how far the card is from the top of the screen
+            // Cards closer to top (negative or small positive values) should be less rotated
+            let screenTop: CGFloat = 200 // Account for top padding and bill display
+            let distanceFromTop = currentCardPosition - screenTop
+            
+            // Normalize the distance to a 0-1 range for rotation interpolation
+            let maxDistance = deviceHeight * 0.6 // Maximum distance for full rotation
+            let normalizedDistance = max(0, min(1, distanceFromTop / maxDistance))
+            
+            // Interpolate between -5° (top) and -40° (bottom)
+            let topRotation = -5.0
+            let bottomRotation = -40.0
+            let dynamicRotation = topRotation + normalizedDistance * (bottomRotation - topRotation)
+            
+            print("Card \(tabIndex): basePos=\(baseCardPosition), scrollOffset=\(scrollViewContentOffset), currentPos=\(currentCardPosition), distanceFromTop=\(distanceFromTop), normalized=\(normalizedDistance), rotation=\(dynamicRotation)")
+            
+            return dynamicRotation
+        }
+        
+        return -40.0 // Default fallback
     }
 }
