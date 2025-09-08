@@ -37,6 +37,8 @@ struct TabSwitcherView: View {
     @State private var tappedCardId: UUID? = nil
     @State private var isPinchedView: Bool = false
     @GestureState private var pinchScale: CGFloat = 1.0
+    @State private var animatedCardIndices: Set<Int> = []
+    @State private var cardsInFinalPosition: Set<Int> = []
     
     var body: some View {
         ZStack {
@@ -99,6 +101,13 @@ struct TabSwitcherView: View {
                             .zIndex(Double(index))
                             .opacity(isPinchedView ? 1.0 : 1.0) // Force 100% opacity in pinched view
                             .padding(.horizontal, getHorizontalPadding(for: index))
+                            .animation(
+                                isPinchedView ? 
+                                    .easeInOut(duration: 0.3).delay(Double(index) * 0.1) : 
+                                    .easeInOut(duration: 0.3),
+                                value: isPinchedView
+                            )
+                            .animation(.easeInOut(duration: 0.3), value: cardsInFinalPosition)
                             .background(
                                 GeometryReader { geometry in
                                     Color.clear
@@ -133,6 +142,10 @@ struct TabSwitcherView: View {
                             isPinchedView = true
                             tappedCardId = nil // Disable card interactions
                         }
+                        
+                        // Start two-phase animation
+                        startTwoPhaseAnimation()
+                        
                         // Add haptic feedback
                         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                         impactFeedback.impactOccurred()
@@ -142,6 +155,7 @@ struct TabSwitcherView: View {
                         print("Pinch out detected - switching to normal view")
                         withAnimation(.easeInOut(duration: 0.3)) {
                             isPinchedView = false
+                            cardsInFinalPosition.removeAll() // Reset final positions
                         }
                     }
                 }
@@ -150,13 +164,19 @@ struct TabSwitcherView: View {
             TapGesture(count: 2)
                 .onEnded {
                     print("Double tap detected - toggling pinched view")
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        isPinchedView.toggle()
-                        if isPinchedView {
+                    if !isPinchedView {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isPinchedView = true
                             tappedCardId = nil // Disable card interactions
-                            // Add haptic feedback
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                            impactFeedback.impactOccurred()
+                        }
+                        startTwoPhaseAnimation()
+                        // Add haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isPinchedView = false
+                            cardsInFinalPosition.removeAll() // Reset final positions
                         }
                     }
                 }
@@ -170,7 +190,14 @@ struct TabSwitcherView: View {
     }
     
     private func getOffsetY(for index: Int) -> CGFloat {
-        return CGFloat(index) * 8 // Reduced vertical offset for better spacing
+        if isPinchedView {
+            if cardsInFinalPosition.contains(index) {
+                return CGFloat(index) * 8 + 40 // Final position: 40px down
+            } else {
+                return CGFloat(index) * 8 // First phase: original position
+            }
+        }
+        return CGFloat(index) * 8 // Normal view: original position
     }
     
     private func getCardTopPadding(for tab: Tab) -> CGFloat {
@@ -197,6 +224,22 @@ struct TabSwitcherView: View {
             cardPositions.append(0)
         }
         cardPositions[cardData.index] = cardData.position
+    }
+    
+    private func startTwoPhaseAnimation() {
+        // Reset final position tracking
+        cardsInFinalPosition.removeAll()
+        
+        // Phase 1: Cards rotate to 0° one by one (already handled by existing animation)
+        // Phase 2: After a delay, move each card down by 40px one by one with haptic feedback
+        for index in 0..<tabs.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.1 + 0.4) {
+                cardsInFinalPosition.insert(index)
+                // Add haptic feedback for each card when it reaches final position
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+            }
+        }
     }
     
     private func getDynamicRotationAngle(for index: Int) -> Double {
